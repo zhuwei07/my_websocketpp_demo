@@ -1,0 +1,12 @@
+<packageDefine name="websocket" version="1" type="cpp" includedir="." platform="all">
+	<parameter/>
+	<depend>
+	</depend>
+	<cppfile>
+	</cppfile>
+	<headfile>
+	</headfile>
+	<libfile>
+	</libfile>
+	<command/>
+</packageDefine>
