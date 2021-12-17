@@ -1,4 +1,4 @@
-<project target="WsServer" targettype="exe" hasdebug="yes" hasmap="no" hasprofile="no" multithread="yes" warninglevel="2" libs="" workdir="." cppflags="-DDEBUG_NOT_LOG" ldflags="" arflags="">
+<project target="WsClient" targettype="exe" hasdebug="yes" hasmap="no" hasprofile="no" multithread="yes" warninglevel="2" libs="" workdir="." cppflags="-DDEBUG_NOT_LOG" ldflags="" arflags="">
 	<package name="websocket" dir="./websocket"/>
 	<package name="asio" dir="./asio"/>
 	<package name="wsclient" dir="./wsclient"/>
