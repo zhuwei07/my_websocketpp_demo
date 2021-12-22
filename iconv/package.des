@@ -1,0 +1,14 @@
+<packageDefine name="iconv" version="1" type="cpp" includedir="." platform="all">
+	<parameter/>
+	<depend>
+	</depend>
+	<cppfile>
+	</cppfile>
+	<headfile>
+		<file name="iconv.h"/>
+	</headfile>
+	<libfile>
+		<file name="iconv"/>
+	</libfile>
+	<command/>
+</packageDefine>

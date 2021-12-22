@@ -1,4 +1,4 @@
-Ôªø#ifndef ASIO_STANDALONE
+#ifndef ASIO_STANDALONE
 #define ASIO_STANDALONE
 #define _WEBSOCKETPP_CPP11_RANDOM_DEVICE_
 #define _WEBSOCKETPP_CPP11_TYPE_TRAITS_
@@ -20,6 +20,10 @@
 #include <thread>
 #include <time.h>
 #include <vector>
+#ifdef LINUX
+#include "iconv.h"
+#endif // LINUX
+
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/config/core.hpp>
@@ -38,6 +42,50 @@ using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
 
+#ifdef WINDOWS
+// std::string ◊™ªªŒ™ UTF-8 ±‡¬Î
+std::string string_To_UTF8(const std::string &str)
+{
+    int nwLen = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
+
+    wchar_t *pwBuf = new wchar_t[nwLen + 1];//“ª∂®“™º”1£¨≤ª»ªª·≥ˆœ÷Œ≤∞Õ 
+    ZeroMemory(pwBuf, nwLen * 2 + 2);
+
+    ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), pwBuf, nwLen);
+
+    int nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
+
+    char *pBuf = new char[nLen + 1];
+    ZeroMemory(pBuf, nLen + 1);
+
+    ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
+
+    std::string retStr(pBuf);
+
+    delete[]pwBuf;
+    delete[]pBuf;
+
+    pwBuf = NULL;
+    pBuf = NULL;
+
+    return retStr;
+}
+#else
+//gbk◊™UTF-8
+string string_to_utf8(string strSrc)
+{
+    size_t srclen = strSrc.size() + 1;
+    size_t dstlen = 2 * srclen;
+    char *dst = new char[dstlen];
+    char *pIn = (char *)strSrc.c_str();
+    char *pOut = (char *)dst;
+    iconv_t conv = iconv_open("gb2312", "utf-8");
+    iconv(conv, &pIn, &srclen, &pOut, &dstlen);
+    iconv_close(conv);
+    return string(dst);
+}
+#endif
+
 string Int_to_string(int n)
 {
     ostringstream stream;
@@ -50,6 +98,9 @@ class CWsServer
 public:
     CWsServer()
     {
+        m_webSocketServer.set_access_channels(websocketpp::log::alevel::all);
+        m_webSocketServer.clear_access_channels(websocketpp::log::alevel::frame_payload);
+
         // Initialize Asio Transport
         m_webSocketServer.init_asio();
 
@@ -99,14 +150,23 @@ public:
 
     string generateMessage()
     {
-        static vector<unsigned char> buffer;
-
         int64_t timestamp = time(0);
         string msg = "";
-        msg += R"({"timestamp":)" + Int_to_string(timestamp) +
-            R"(, "id":"5555", "payload":"hello world"})";
+        string retMsg = "";
+#ifdef WINDOWS
+        msg += "timestamp" + Int_to_string(timestamp) + ",msg: ƒ„∫√, Œ“ «£¨";
+        retMsg = string_To_UTF8(msg);
+#else
+        msg += "timestamp" + Int_to_string(timestamp) + ",msg: ƒ„∫√, Œ“ «£¨";
+        retMsg = string_to_utf8(msg);
+        cout << retMsg << endl;
+        //msg = GbkToUtf8("ƒ„∫√£¨");
+#endif // WINDOWS
 
-        return msg;
+        /*msg += R"({"timestamp":)" + Int_to_string(timestamp) +
+            R"(, "id":"5555", "msg":"ƒ„∫√"})";*/
+
+        return retMsg;
     }
 
     void send_messages()
@@ -115,16 +175,19 @@ public:
         while (1)
         {
             string msg = generateMessage();
-            msg = msg + "send Times: " + Int_to_string(nSendTimes);
+            msg = msg + ",send Times: " + Int_to_string(nSendTimes);
 
-            lock_guard<mutex> lock(conMutex);
             for (auto &con : m_connections)
             {
                 m_webSocketServer.send(
                     con, msg, websocketpp::frame::opcode::text);
             }
             nSendTimes++;
+#ifdef WINDOWS
             Sleep(1000);
+#else
+            sleep(1);
+#endif // WINDOWS
         }
     }
 
@@ -143,7 +206,7 @@ int main(int argc, char **argv)
 
         // Run the asio loop with the main thread
         server_instance.run(9002);
-        //ÂêØÂä®ÂèëÈÄÅÊ∂àÊÅØÁöÑÁ∫øÁ®ã
+        //∆Ù∂Ø∑¢ÀÕœ˚œ¢µƒœﬂ≥Ã
         t.join();
     }
     catch (websocketpp::exception const &e)
